@@ -1,0 +1,104 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --soil: #1a1208;
+  --earth: #2d1f0e;
+  --bark: #3d2b14;
+  --clay: #7c5c38;
+  --sand: #c4a882;
+  --cream: #f5ede0;
+  --paper: #faf6f0;
+
+  --leaf: #2d5a27;
+  --sage: #4a7c42;
+  --moss: #6b9e60;
+  --sprout: #9dc88d;
+  --mint: #c8e6c0;
+
+  --amber: #e8a020;
+  --harvest: #d4620a;
+  --risk: #c0392b;
+  --risk-light: #fadbd8;
+
+  --text-primary: #1a1208;
+  --text-secondary: #5a4a35;
+  --text-muted: #9a8570;
+  --border: #e0d4c0;
+  --bg: #faf6f0;
+  --surface: #ffffff;
+  --surface-2: #f5ede0;
+
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-lg: 20px;
+  --shadow-sm: 0 1px 3px rgba(26,18,8,0.08);
+  --shadow: 0 4px 16px rgba(26,18,8,0.10);
+  --shadow-lg: 0 12px 40px rgba(26,18,8,0.14);
+
+  --font-display: 'Syne', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+}
+
+html { font-size: 16px; -webkit-font-smoothing: antialiased; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text-primary);
+  min-height: 100vh;
+}
+
+#root { min-height: 100vh; display: flex; flex-direction: column; }
+
+h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; }
+
+a { color: inherit; text-decoration: none; }
+
+button {
+  font-family: var(--font-body);
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
+
+input, textarea, select {
+  font-family: var(--font-body);
+  outline: none;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+
+/* Animations */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.fade-up { animation: fadeUp 0.45s cubic-bezier(.22,.68,0,1.2) both; }
+.fade-up-1 { animation-delay: 0.05s; }
+.fade-up-2 { animation-delay: 0.1s; }
+.fade-up-3 { animation-delay: 0.15s; }
+.fade-up-4 { animation-delay: 0.2s; }
+
+.spinner {
+  width: 20px; height: 20px;
+  border: 2.5px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
