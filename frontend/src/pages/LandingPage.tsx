@@ -165,8 +165,7 @@ export default function LandingPage() {
               { icon: <BarChart2 size={22}/>, title: 'Live Dashboard',       desc: 'Real-time overview of all fields, status breakdowns, and at-risk alerts — updated as agents log observations.',   color: '#6C3FC5' },
               { icon: <Sprout size={22}/>,    title: 'Lifecycle Tracking',    desc: 'Track every crop from Planted → Growing → Ready → Harvested with automatic status computation.',                  color: '#5cb857' },
               { icon: <Users size={22}/>,     title: 'Agent Coordination',    desc: 'Assign fields to agents, monitor their activity, and get instant alerts when a field needs attention.',           color: '#f59e0b' },
-              { icon: <Bell size={22}/>,      title: 'Smart Notifications',   desc: 'In-app and email alerts on low health scores, overdue harvests, or agents who haven\'t checked in.',              color: '#ef4444' },
-              { icon: <Shield size={22}/>,    title: 'Secure Auth',           desc: 'Argon2id passwords, JWT sessions, email verification, role separation — production-grade security.',              color: '#9b67e8' },
+              { icon: <Bell size={22}/>,      title: 'Constant Notifications',   desc: 'In-app and email alerts on low health scores, overdue harvests, or agents who haven\'t checked in.',              color: '#ef4444' },
               { icon: <Smartphone size={22}/>,title: 'Mobile  Access',     desc: 'Field agents can input updates from their phones, directly from the field —  anywhere they are operating.',                  color: '#7FD67A' },
             ].map((f, i) => (
               <Reveal key={f.title} delay={i * 70}>
@@ -221,7 +220,7 @@ export default function LandingPage() {
               <h2 style={{ ...H, fontSize: 'clamp(1.6rem,3vw,2.3rem)', fontWeight: 900, letterSpacing: '-.03em', marginBottom: 14 }}>Built by farmers,<br/><span style={{ background: 'linear-gradient(135deg,#9b67e8,#7FD67A)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>for farmers</span></h2>
               <p style={{ color: 'rgba(245,240,255,.55)', lineHeight: 1.7, marginBottom: 16, fontSize: '.95rem' }}>SmartSeason was built to solve a real problem — farm coordinators losing track of field progress, agents filling paper forms, and harvests being missed.</p>
               <p style={{ color: 'rgba(245,240,255,.55)', lineHeight: 1.7, marginBottom: 26, fontSize: '.95rem' }}>We built a system that works with growing seasons, timezone, and the reality of field work.</p>
-              {['Role-based access for coordinators & agents','Automated at-risk detection, no manual checks','Real-time Africa/Nairobi timezone throughout'].map(item => (
+              {['Role-based access for coordinators & agents','Automated at-risk detection, no manual checks','Real-time progress relay'].map(item => (
                 <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                   <CheckCircle size={15} color="#7FD67A"/>
                   <span style={{ fontSize: '.875rem', color: 'rgba(245,240,255,.6)' }}>{item}</span>
@@ -239,9 +238,9 @@ export default function LandingPage() {
             <Reveal><h2 style={{ ...H, fontSize: 'clamp(1.6rem,3vw,2.3rem)', fontWeight: 900, letterSpacing: '-.03em' }}>Get in touch</h2></Reveal>
             <Reveal delay={80}><p style={{ color: 'rgba(245,240,255,.5)', marginTop: 10 }}>Our team is always available and ready to help.</p></Reveal>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(220px,1fr))', gap: 16, maxWidth: 820, margin: '0 auto' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(220px,1fr))', gap: 16, maxWidth: 842, margin: '0 auto' }}>
             {[
-              { icon: <Mail size={20}/>,  label: 'Email',    val: 'support@smartseason.app', color: '#6C3FC5' },
+              { icon: <Mail size={20}/>,  label: 'Email',    val: 'support@smartseason.app',  color: '#6C3FC5' },
               { icon: <Phone size={20}/>, label: 'Phone',    val: '+254 700 000 000',         color: '#5cb857' },
               { icon: <MapPin size={20}/>,label: 'Location', val: 'Westlands, Nairobi',       color: '#f59e0b' },
               { icon: <Bell size={20}/>,  label: 'Hours',    val: 'Mon–Fri 8am–6pm EAT',      color: '#9b67e8' },
