@@ -12,7 +12,6 @@ smartseason/
 ├── email-api/     FastAPI + Resend          → Deploy on Vercel
 ├── frontend/      Vite + React + TypeScript → Deploy on Vercel (field agents + landing page)
 ├── admin/         Vite + React + TypeScript → Deploy on Vercel (admin/coordinator dashboard)
-├── MOCK_DATA.md   Test data and expected outcomes
 └── README.md
 ```
 
