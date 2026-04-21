@@ -23,8 +23,7 @@ smartseason/
 ### Prerequisites
 - Python 3.11+
 - Node.js 18+
-- MongoDB Atlas account (free tier works)
-- Resend account (free tier: 3,000 emails/month)
+- MongoDB Atlas account 
 
 ---
 
@@ -116,25 +115,7 @@ npm run dev   # :5174
 
 Routes: `/dashboard`, `/fields`, `/fields/:id`, `/agents`, `/profile`, `/settings`
 
----
 
-### Local Development (all together)
-
-```bash
-# Terminal 1 — backend
-cd backend && uvicorn main:app --reload
-
-# Terminal 2 — email api (optional, emails will skip gracefully if not running)
-cd email-api && uvicorn main:app --port 3001 --reload
-
-# Terminal 3 — frontend
-cd frontend && npm run dev
-
-# Terminal 4 — admin
-cd admin && npm run dev
-```
-
----
 
 ## API Reference
 
