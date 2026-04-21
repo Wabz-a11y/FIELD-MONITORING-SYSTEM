@@ -129,7 +129,7 @@ export default function LandingPage() {
               <a href="#how-it-works" className="lbtn lbtn-outline">See How It Works <ChevronDown size={17}/></a>
             </div>
             <div style={{ display: 'flex', gap: 24, marginTop: 42, flexWrap: 'wrap', animation: 'fadeUp .8s .5s both' }}>
-              {['No credit card required','Free to use','Nairobi-optimised'].map(t => (
+              {['Very','Easy','to Use.'].map(t => (
                 <div key={t} style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: '.82rem', color: 'rgba(255,255,255,.45)' }}>
                   <CheckCircle size={14} color="#7FD67A"/>{t}
                 </div>
