@@ -8,10 +8,10 @@ Intelligent field monitoring platform for tracking crop progress, coordinating f
 
 ```
 smartseason/
-├── backend/       FastAPI + MongoDB Atlas   → Deploy on Render
-├── email-api/     FastAPI + Resend          → Deploy on Vercel
-├── frontend/      Vite + React + TypeScript → Deploy on Vercel (field agents + landing page)
-├── admin/         Vite + React + TypeScript → Deploy on Vercel (admin/coordinator dashboard)
+├── backend/       FastAPI + MongoDB Atlas   
+├── email-api/     FastAPI + Resend     
+├── frontend/      Vite + React + TypeScript 
+├── admin/         Vite + React + TypeScript 
 └── README.md
 ```
 
@@ -26,13 +26,12 @@ smartseason/
 
 ---
 
-### 1 — Backend (Render)
+### 1 — Backend
 
 ```bash
 cd backend
 pip install -r requirements.txt
-cp .env.example .env        # Fill in all values
-uvicorn main:app --reload   # Runs on :8000
+uvicorn main:app --reload --port 8000
 ```
 
 **Environment variables:**
@@ -62,8 +61,6 @@ The email-api is a **separate Python FastAPI app** hosted on Vercel via the Mang
 ```bash
 cd email-api
 pip install -r requirements.txt
-cp .env.example .env.local
-# Local dev: uvicorn main:app --port 3001
 ```
 
 **Environment variables:**
@@ -83,12 +80,11 @@ Add env vars in Vercel project settings.
 
 ---
 
-### 3 — Frontend — Field Agent + Landing Page (Vercel)
+### 3 — Frontend — Field Agent
 
 ```bash
 cd frontend
 npm install
-cp .env.example .env.local
 # VITE_API_URL=https://your-backend.onrender.com/api
 # VITE_ADMIN_URL=https://smartseason-admin.vercel.app
 npm run dev   # :5173
@@ -168,15 +164,11 @@ Each app has two page files: `AuthPages.tsx` (all auth flows) and `AppPages.tsx`
 ### 4. Status computed at read time, never stored
 `FieldStatus` is calculated fresh on every API response in `status_logic.py`. This ensures accuracy without background jobs — a field neglected for 14 days becomes "At Risk" automatically on the next request.
 
-### 5. Argon2id over bcrypt
-Argon2id is the OWASP Password Hashing Competition winner. It is memory-hard (resistant to GPU brute-force) and is the current OWASP recommendation for new systems. Parameters: time_cost=2, memory=64MB, parallelism=2.
-
-
-### 7. Email as a separate Python service on Vercel
+### 6. Email as a separate Python service on Vercel
 Rather than a Next.js service, the email-api is a pure Python FastAPI app using Mangum (the ASGI→Lambda adapter that Vercel uses). This keeps the whole stack in Python for the backend team, and avoids context-switching to TypeScript/Node just for email.
 
-### 8. Database API
-Database used for storage is MongoDB
+### 7. Database API
+Database used for storage is MongoDB, which is easy to intergrate.
 The platform uses an API for MongoDB Atlas string
 However switching to other databases like MySQL or Postgre is possible by just change the database block file.
 
