@@ -201,16 +201,16 @@ However switching to other databases like MySQL or Postgre is possible by just c
 | Layer | Tech | Reason |
 |-------|------|--------|
 | API | FastAPI (Python) | Async, typed, great DX |
-| Database | MongoDB Atlas + Motor | Flexible schema, free cloud, TTL indexes for token expiry |
+| Database | MongoDB Atlas + Motor | Flexible schema, TTL indexes for token expiry |
 | Password hashing | Argon2id (argon2-cffi) | OWASP recommended |
 | JWT | python-jose | Standard FastAPI pattern |
-| Email sending | Resend | Reliable, generous free tier |
+| Email sending | Resend | Reliable|
 | Email hosting | Vercel + Mangum | Separate from Render, Python-native |
 | Frontend | Vite + React 18 + TypeScript | Fast HMR, strong typing |
 | Charts | Recharts (admin only) | Composable, React-native |
 | Timezone | pytz + date-fns-tz | Full IANA timezone support |
-| Backend hosting | Render | Free tier, Python support |
-| Frontend hosting | Vercel | Fast deploys, CDN, free tier |
+| Backend hosting | Render | Python support |
+| Frontend hosting | Vercel | Fast deploys, CDN|
 
 
 ## ==== DEMO CREDENTIALS =====

@@ -86,8 +86,8 @@ export default function LandingPage() {
             {navLinks.map(l => <a key={l} href={`#${l.toLowerCase().replace(/ /g,'-')}`} style={{ fontSize: '.875rem', fontWeight: 500, color: 'rgba(255,255,255,.6)', transition: 'color .15s' }} onMouseEnter={e=>(e.currentTarget.style.color='white')} onMouseLeave={e=>(e.currentTarget.style.color='rgba(255,255,255,.6)')}>{l}</a>)}
           </div>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-            <a href={ADMIN_URL} className="lbtn lbtn-outline" style={{ padding: '8px 16px', fontSize: '.85rem' }}>Admin</a>
-            <a href="/register" className="lbtn lbtn-green" style={{ padding: '8px 16px', fontSize: '.85rem' }}>Agent Sign Up</a>
+            <a href={ADMIN_URL} className="lbtn lbtn-outline" style={{ padding: '8px 16px', fontSize: '.85rem' }}>Coordinator or Admin</a>
+            <a href="/register" className="lbtn lbtn-green" style={{ padding: '8px 16px', fontSize: '.85rem' }}>Field Agent Sign Up</a>
             <button className="lmenu-btn" onClick={()=>setNavOpen(o=>!o)} style={{ display: 'none', background: 'none', border: 'none', color: 'white', cursor: 'pointer', padding: 4 }}>
               {navOpen ? <X size={22}/> : <Menu size={22}/>}
             </button>
@@ -122,10 +122,10 @@ export default function LandingPage() {
               Smart Field Monitoring<br/><span style={{ background: 'linear-gradient(135deg,#9b67e8,#7FD67A)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>for Modern Farms</span>
             </h1>
             <p style={{ fontSize: 'clamp(.95rem,2vw,1.1rem)', color: 'rgba(245,240,255,.65)', lineHeight: 1.7, marginBottom: 34, maxWidth: 560, animation: 'fadeUp .8s .2s both' }}>
-              Track crop progress, monitor field health in real time, and coordinate your agents — all from one intelligent platform designed for Nairobi's agricultural ecosystem.
+              Track crop progress, monitor field health in real time, and coordinate your agents — all from one intelligent platform designed for Agricultural Ecosystem.
             </p>
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', animation: 'fadeUp .8s .3s both' }}>
-              <a href="/register" className="lbtn lbtn-green">Get Started Free <ArrowRight size={17}/></a>
+              <a href="/register" className="lbtn lbtn-green">Get Started <ArrowRight size={17}/></a>
               <a href="#how-it-works" className="lbtn lbtn-outline">See How It Works <ChevronDown size={17}/></a>
             </div>
             <div style={{ display: 'flex', gap: 24, marginTop: 42, flexWrap: 'wrap', animation: 'fadeUp .8s .5s both' }}>
@@ -167,7 +167,7 @@ export default function LandingPage() {
               { icon: <Users size={22}/>,     title: 'Agent Coordination',    desc: 'Assign fields to agents, monitor their activity, and get instant alerts when a field needs attention.',           color: '#f59e0b' },
               { icon: <Bell size={22}/>,      title: 'Smart Notifications',   desc: 'In-app and email alerts on low health scores, overdue harvests, or agents who haven\'t checked in.',              color: '#ef4444' },
               { icon: <Shield size={22}/>,    title: 'Secure Auth',           desc: 'Argon2id passwords, JWT sessions, email verification, role separation — production-grade security.',              color: '#9b67e8' },
-              { icon: <Smartphone size={22}/>,title: 'Mobile Responsive',     desc: 'Field agents can log updates from their phones, directly from the field — no desktop required.',                  color: '#7FD67A' },
+              { icon: <Smartphone size={22}/>,title: 'Mobile  Access',     desc: 'Field agents can input updates from their phones, directly from the field —  anywhere they are operating.',                  color: '#7FD67A' },
             ].map((f, i) => (
               <Reveal key={f.title} delay={i * 70}>
                 <div style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)', borderRadius: 16, padding: 26, transition: 'all .2s', cursor: 'default' }}
@@ -220,7 +220,7 @@ export default function LandingPage() {
             <Reveal dir="right" delay={100}>
               <h2 style={{ ...H, fontSize: 'clamp(1.6rem,3vw,2.3rem)', fontWeight: 900, letterSpacing: '-.03em', marginBottom: 14 }}>Built by farmers,<br/><span style={{ background: 'linear-gradient(135deg,#9b67e8,#7FD67A)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>for farmers</span></h2>
               <p style={{ color: 'rgba(245,240,255,.55)', lineHeight: 1.7, marginBottom: 16, fontSize: '.95rem' }}>SmartSeason was built to solve a real problem — farm coordinators losing track of field progress, agents filling paper forms, and harvests being missed.</p>
-              <p style={{ color: 'rgba(245,240,255,.55)', lineHeight: 1.7, marginBottom: 26, fontSize: '.95rem' }}>We built a system that works with Nairobi's growing seasons, timezone, and the reality of field work.</p>
+              <p style={{ color: 'rgba(245,240,255,.55)', lineHeight: 1.7, marginBottom: 26, fontSize: '.95rem' }}>We built a system that works with growing seasons, timezone, and the reality of field work.</p>
               {['Role-based access for coordinators & agents','Automated at-risk detection, no manual checks','Real-time Africa/Nairobi timezone throughout'].map(item => (
                 <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                   <CheckCircle size={15} color="#7FD67A"/>
@@ -237,7 +237,7 @@ export default function LandingPage() {
         <div className="lcont">
           <div style={{ textAlign: 'center', marginBottom: 52 }}>
             <Reveal><h2 style={{ ...H, fontSize: 'clamp(1.6rem,3vw,2.3rem)', fontWeight: 900, letterSpacing: '-.03em' }}>Get in touch</h2></Reveal>
-            <Reveal delay={80}><p style={{ color: 'rgba(245,240,255,.5)', marginTop: 10 }}>Our team is based in Nairobi and ready to help.</p></Reveal>
+            <Reveal delay={80}><p style={{ color: 'rgba(245,240,255,.5)', marginTop: 10 }}>Our team is always available and ready to help.</p></Reveal>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(220px,1fr))', gap: 16, maxWidth: 820, margin: '0 auto' }}>
             {[
@@ -268,7 +268,7 @@ export default function LandingPage() {
               <div style={{ position: 'absolute', top: -60, right: -60, width: 220, height: 220, background: 'radial-gradient(circle,rgba(108,63,197,.28),transparent 70%)', borderRadius: '50%' }}/>
               <div style={{ position: 'relative', zIndex: 1 }}>
                 <h2 style={{ ...H, fontWeight: 900, fontSize: 'clamp(1.5rem,3.5vw,2.4rem)', letterSpacing: '-.03em', marginBottom: 10 }}>Ready to transform your farm?</h2>
-                <p style={{ color: 'rgba(245,240,255,.55)', marginBottom: 28 }}>Join Kenyan farms already using SmartSeason.</p>
+                <p style={{ color: 'rgba(245,240,255,.55)', marginBottom: 28 }}>Join many farms already using SmartSeason.</p>
                 <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
                   <a href={ADMIN_URL+'/register'} className="lbtn lbtn-purple">Start as Coordinator</a>
                   <a href="/register"             className="lbtn lbtn-green">Register as Agent</a>
@@ -287,7 +287,7 @@ export default function LandingPage() {
               <svg width="26" height="26" viewBox="0 0 40 40" fill="none"><rect width="40" height="40" rx="10" fill="#6C3FC5"/><path d="M20 7C20 7 11 14.5 11 21.5C11 26.2 15.03 30 20 30C24.97 30 29 26.2 29 21.5C29 14.5 20 7 20 7Z" fill="#7FD67A"/></svg>
               <span style={{ ...H, fontWeight: 800, fontSize: '.95rem' }}>SmartSeason</span>
             </div>
-            <span style={{ fontSize: '.75rem', color: 'rgba(255,255,255,.3)' }}>© {new Date().getFullYear()} SmartSeason · Nairobi, Kenya · support@smartseason.app</span>
+            <span style={{ fontSize: '.75rem', color: 'rgba(255,255,255,.3)' }}>© {new Date().getFullYear()}  All rights reserved · Nairobi, Kenya · </span>
           </div>
         </div>
       </footer>
