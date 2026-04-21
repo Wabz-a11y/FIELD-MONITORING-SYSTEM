@@ -1,66 +1,6 @@
-# 🌾 SmartSeason Field Monitoring System
+# 🌱 SmartSeason v2
 
-A full-stack web application for tracking crop progress across multiple fields during a growing season.
-
----
-
-## Tech Stack
-
-| Layer     | Technology                            |
-|-----------|---------------------------------------|
-| Frontend  | React 18 + TypeScript + Vite          |
-| Backend   | Python + FastAPI                      |
-| Database  | MongoDB (via Motor async driver)      |
-| Auth      | JWT (python-jose) + bcrypt (passlib)  |
-| Charts    | Recharts                              |
-| Fonts     | Syne (display) + DM Sans (body)       |
-
----
-
-## Features
-
-### Roles & Access
-- **Admin (Coordinator)** — Full access: create/edit/delete fields, assign agents, view all data, monitor all updates
-- **Field Agent** — Scoped access: view and update only assigned fields
-
-### Field Management
-- Create fields with name, crop type, planting date, location, size, and agent assignment
-- Edit and delete fields (admin only)
-- Assign/reassign fields to field agents
-
-### Field Lifecycle
-```
-Planted → Growing → Ready → Harvested
-```
-Stage transitions are driven by field agents through the update log.
-
-### Field Status Logic
-Each field's status is computed dynamically at read time:
-
-| Condition | Status |
-|---|---|
-| Stage is `harvested` | ✅ **Completed** |
-| Latest health score ≤ 4 | ⚠️ **At Risk** |
-| Stage is `ready`, no update in >7 days | ⚠️ **At Risk** (overdue harvest) |
-| Stage is `planted` or `growing`, no update in >14 days | ⚠️ **At Risk** (neglected field) |
-| Days since planted > 1.5× expected for current stage | ⚠️ **At Risk** (behind schedule) |
-| All other fields | 🌱 **Active** |
-
-**Expected stage timelines:**
-- `planted` → 0–14 days from planting
-- `growing` → 15–60 days
-- `ready`   → 61–75 days
-- `harvested` → 76+ days
-
-### Dashboard
-- **Admin**: Total fields, status & stage breakdown charts, at-risk field list, recent activity feed across all agents
-- **Agent**: Same view scoped to assigned fields only
-
-### Field Updates
-Agents log field observations including:
-- Free-text notes
-- Optional stage change
-- Optional health score (1–10)
+Intelligent field monitoring platform for tracking crop progress, coordinating field agents, and monitoring farm health across a growing season.
 
 ---
 
@@ -68,152 +8,244 @@ Agents log field observations including:
 
 ```
 smartseason/
-├── backend/
-│   ├── main.py              # FastAPI app entry + CORS
-│   ├── database.py          # Motor async MongoDB client + index setup
-│   ├── models.py            # All Pydantic v2 schemas
-│   ├── auth_utils.py        # JWT creation/verification, bcrypt, auth deps
-│   ├── status_logic.py      # Pure function: compute_field_status()
-│   ├── seed.py              # Demo data seeder
-│   ├── requirements.txt
-│   ├── .env.example
-│   └── routers/
-│       ├── auth.py          # POST /register, /login, GET /me
-│       ├── users.py         # GET /agents, /users (admin only)
-│       ├── fields.py        # Full CRUD + GET /dashboard
-│       └── updates.py       # POST / create update, GET /field/:id
-│
-└── frontend/
-    ├── index.html
-    ├── vite.config.ts       # Dev proxy: /api → localhost:8000
-    ├── src/
-    │   ├── main.tsx
-    │   ├── App.tsx           # Routes + auth guards
-    │   ├── index.css         # Design tokens (CSS variables), animations
-    │   ├── types/index.ts    # Shared TypeScript interfaces
-    │   ├── lib/api.ts        # Axios instance with JWT interceptors
-    │   ├── hooks/
-    │   │   └── useAuth.tsx   # Auth context (login, register, logout)
-    │   ├── pages/
-    │   │   ├── LoginPage.tsx
-    │   │   ├── RegisterPage.tsx
-    │   │   ├── DashboardPage.tsx
-    │   │   ├── FieldsPage.tsx
-    │   │   └── FieldDetailPage.tsx
-    │   └── components/
-    │       ├── Layout.tsx    # Sidebar + outlet
-    │       └── UI.tsx        # StatusBadge, StageBadge, StatCard, etc.
-    └── package.json
+├── backend/       FastAPI + MongoDB Atlas   → Deploy on Render
+├── email-api/     FastAPI + Resend          → Deploy on Vercel
+├── frontend/      Vite + React + TypeScript → Deploy on Vercel (field agents + landing page)
+├── admin/         Vite + React + TypeScript → Deploy on Vercel (admin/coordinator dashboard)
+├── MOCK_DATA.md   Test data and expected outcomes
+└── README.md
 ```
 
 ---
 
-## Setup & Running
+## Setup Instructions
 
 ### Prerequisites
 - Python 3.11+
 - Node.js 18+
-- MongoDB running locally on port 27017
+- MongoDB Atlas account (free tier works)
+- Resend account (free tier: 3,000 emails/month)
 
-### 1. Backend
+---
+
+### 1 — Backend (Render)
 
 ```bash
 cd backend
-
-# Copy environment config
-cp .env.example .env
-
-# Install dependencies
 pip install -r requirements.txt
-
-# (Optional) Seed demo data
-python seed.py
-
-# Start the API server
-uvicorn main:app --reload
+cp .env.example .env        # Fill in all values
+uvicorn main:app --reload   # Runs on :8000
 ```
 
-API will be available at `http://localhost:8000`  
-Interactive docs at `http://localhost:8000/docs`
+**Environment variables:**
 
-### 2. Frontend
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `MONGO_URL` | ✅ | MongoDB Atlas connection string |
+| `DB_NAME` | ✅ | Database name (default: `smartseason`) |
+| `SECRET_KEY` | ✅ | Long random string for JWT signing |
+| `EMAIL_API_URL` | ✅ | URL of deployed email-api on Vercel |
+| `EMAIL_API_SECRET` | ✅ | Shared secret between backend and email-api |
+| `FRONTEND_URL` | ✅ | Field agent app URL (for CORS + email links) |
+| `ADMIN_URL` | ✅ | Admin dashboard URL (for CORS + email links) |
+
+**Render deployment:**
+1. Connect GitHub repo → set Root Directory to `backend`
+2. Build command: `pip install -r requirements.txt`
+3. Start command: `uvicorn main:app --host 0.0.0.0 --port $PORT`
+4. Add all env vars in Render dashboard
+
+---
+
+### 2 — Email API (Vercel)
+
+The email-api is a **separate Python FastAPI app** hosted on Vercel via the Mangum ASGI adapter. The backend never sends emails directly — Render's outbound email delivery is unreliable, so all email is delegated here.
+
+```bash
+cd email-api
+pip install -r requirements.txt
+cp .env.example .env.local
+# Local dev: uvicorn main:app --port 3001
+```
+
+**Environment variables:**
+
+| Variable | Description |
+|----------|-------------|
+| `RESEND_API_KEY` | From resend.com dashboard |
+| `FROM_EMAIL` | Verified sender (e.g. `noreply@smartseason.app`) |
+| `FROM_NAME` | Display name (`SmartSeason`) |
+| `API_SECRET` | Must match backend's `EMAIL_API_SECRET` |
+
+**Vercel deployment:**
+```bash
+cd email-api && vercel
+```
+Add env vars in Vercel project settings.
+
+---
+
+### 3 — Frontend — Field Agent + Landing Page (Vercel)
 
 ```bash
 cd frontend
-
 npm install
-npm run dev
+cp .env.example .env.local
+# VITE_API_URL=https://your-backend.onrender.com/api
+# VITE_ADMIN_URL=https://smartseason-admin.vercel.app
+npm run dev   # :5173
 ```
 
-App will be available at `http://localhost:5173`
-
-> The Vite dev server proxies all `/api/*` requests to `http://localhost:8000`, so no CORS issues during development.
-
----
-
-## Demo Accounts (after seeding)
-
-| Role  | Email              | Password   |
-|-------|--------------------|------------|
-| Admin | admin@farm.com     | password   |
-| Agent | bob@farm.com       | password   |
-| Agent | carol@farm.com     | password   |
+Routes:
+- `/` → Landing page (public)
+- `/login`, `/register` → Agent auth
+- `/dashboard`, `/fields`, `/fields/:id` → Agent app (protected)
+- `/profile`, `/settings` → Agent profile (protected)
 
 ---
 
-## API Endpoints
+### 4 — Admin Dashboard (Vercel)
+
+```bash
+cd admin
+npm install
+cp .env.example .env.local
+# VITE_API_URL=https://your-backend.onrender.com/api
+npm run dev   # :5174
+```
+
+Routes: `/dashboard`, `/fields`, `/fields/:id`, `/agents`, `/profile`, `/settings`
+
+---
+
+### Local Development (all together)
+
+```bash
+# Terminal 1 — backend
+cd backend && uvicorn main:app --reload
+
+# Terminal 2 — email api (optional, emails will skip gracefully if not running)
+cd email-api && uvicorn main:app --port 3001 --reload
+
+# Terminal 3 — frontend
+cd frontend && npm run dev
+
+# Terminal 4 — admin
+cd admin && npm run dev
+```
+
+---
+
+## API Reference
 
 ### Auth
-| Method | Path               | Description              | Access |
-|--------|--------------------|--------------------------|--------|
-| POST   | `/api/auth/register` | Create account          | Public |
-| POST   | `/api/auth/login`    | Login, receive JWT      | Public |
-| GET    | `/api/auth/me`       | Current user info        | Auth   |
+| Method | Path | Description | Auth |
+|--------|------|-------------|------|
+| POST | `/api/auth/register` | Register + send welcome + verify email | Public |
+| POST | `/api/auth/login` | Login, receive JWT | Public |
+| POST | `/api/auth/verify-email` | Verify email with token | Public |
+| POST | `/api/auth/resend-verification` | Resend verification email | JWT |
+| POST | `/api/auth/forgot-password` | Send password reset email | Public |
+| POST | `/api/auth/reset-password` | Reset password with token | Public |
+| GET  | `/api/auth/me` | Current user info | JWT |
+
+### Profile
+| Method | Path | Description |
+|--------|------|-------------|
+| GET    | `/api/profile/` | Get own profile |
+| PATCH  | `/api/profile/` | Update name, phone, bio, notif_pref |
+| POST   | `/api/profile/change-password` | Change password |
+| DELETE | `/api/profile/account` | Delete own account |
 
 ### Fields
-| Method | Path                   | Description                    | Access |
-|--------|------------------------|--------------------------------|--------|
-| GET    | `/api/fields/`          | List fields (scoped by role)   | Auth   |
-| POST   | `/api/fields/`          | Create field                   | Admin  |
-| GET    | `/api/fields/dashboard` | Dashboard stats                | Auth   |
-| GET    | `/api/fields/:id`       | Get single field               | Auth   |
-| PATCH  | `/api/fields/:id`       | Update field                   | Admin  |
-| DELETE | `/api/fields/:id`       | Delete field                   | Admin  |
+| Method | Path | Description | Auth |
+|--------|------|-------------|------|
+| GET  | `/api/fields/` | List fields (scoped by role) | JWT |
+| POST | `/api/fields/` | Create field | Admin |
+| GET  | `/api/fields/dashboard` | Dashboard stats | JWT |
+| GET  | `/api/fields/:id` | Field detail | JWT |
+| PATCH| `/api/fields/:id` | Update field | Admin |
+| DELETE| `/api/fields/:id` | Delete field | Admin |
 
-### Updates
-| Method | Path                      | Description              | Access |
-|--------|---------------------------|--------------------------|--------|
-| POST   | `/api/updates/`            | Create field update      | Auth   |
-| GET    | `/api/updates/field/:id`   | Get updates for a field  | Auth   |
-
-### Users
-| Method | Path              | Description         | Access |
-|--------|-------------------|---------------------|--------|
-| GET    | `/api/users/agents` | List all agents   | Admin  |
-| GET    | `/api/users/`       | List all users    | Admin  |
+### Updates, Notifications — standard CRUD, see `backend/routers/`
 
 ---
 
 ## Design Decisions
 
-### Status is computed, not stored
-`FieldStatus` is never persisted to the database. It is calculated fresh on every read in `status_logic.py`. This ensures status is always accurate based on real-time factors (like elapsed days without updates) without requiring background jobs or triggers.
+### 1. Four-folder structure
+- `backend/` — API logic, one place
+- `email-api/` — email-only microservice, deployed separately because Render's outbound email delivery is unreliable
+- `frontend/` — field agent app and landing page in one Vite app (same audience, same deployment)
+- `admin/` — coordinator dashboard, separate deployment with role enforcement
 
-### Motor for async MongoDB
-All database operations use `motor` (async MongoDB driver) to stay non-blocking within FastAPI's async event loop.
+### 2. Single CSS file per app
+Each frontend has exactly one `src/index.css`. All component styles, layout, and utilities live there. No per-page CSS files, no CSS modules, no styled-components. This keeps the project simple and avoids import hell.
 
-### Role enforcement at dependency level
-FastAPI's `Depends()` system is used with `get_current_user` and `require_admin` guards. This keeps route handlers clean and makes access control easy to reason about and test.
+### 3. Minimal page files
+Each app has two page files: `AuthPages.tsx` (all auth flows) and `AppPages.tsx` (all app pages). This eliminates dozens of tiny files without sacrificing readability.
 
-### Health score as a risk signal
-The 1–10 health score submitted by agents directly feeds into status computation. A score of ≤ 4 immediately flags the field as **At Risk**, giving agents a simple lever to escalate concerns that the automated time-based logic might not catch (e.g. pest outbreak on day 3).
+### 4. Status computed at read time, never stored
+`FieldStatus` is calculated fresh on every API response in `status_logic.py`. This ensures accuracy without background jobs — a field neglected for 14 days becomes "At Risk" automatically on the next request.
+
+### 5. Argon2id over bcrypt
+Argon2id is the OWASP Password Hashing Competition winner. It is memory-hard (resistant to GPU brute-force) and is the current OWASP recommendation for new systems. Parameters: time_cost=2, memory=64MB, parallelism=2.
+
+
+### 7. Email as a separate Python service on Vercel
+Rather than a Next.js service, the email-api is a pure Python FastAPI app using Mangum (the ASGI→Lambda adapter that Vercel uses). This keeps the whole stack in Python for the backend team, and avoids context-switching to TypeScript/Node just for email.
+
+### 8. Database API
+Database used for storage is MongoDB
+The platform uses an API for MongoDB Atlas string
+However switching to other databases like MySQL or Postgre is possible by just change the database block file.
 
 ---
 
-## Environment Variables
+## Assumptions
 
-```env
-MONGO_URL=mongodb://localhost:27017
-DB_NAME=smartseason
-SECRET_KEY=your-super-secret-key-change-this-in-production
-```
+1. **Single organisation** — All admins see all fields. There is no multi-tenant isolation.
+2. **Email delivery optional** — If `EMAIL_API_URL` is not set, the backend logs a warning and continues.         Registration and auth still work; emails are simply skipped.
+   **Email functionality** — The email-api is built around Resend's Python SDK. Switching to SendGrid or SMTP would require changing `email-api/main.py` only. But at the moment email-api code is not hosted, only works locally.
+
+3. **Health score is optional** — Agents can submit updates without a health score. Status falls back to time-based rules only.
+4. **No file uploads** — Profile photos and field images are not supported. Avatar initials are used instead.
+5. **One active role per account** — A user is either an admin or an agent; mixed roles are not supported.
+6. **Nairobi timezone is fixed** — All dates are displayed in EAT. International timezone support is not implemented.
+
+---
+
+## Tech Stack
+
+| Layer | Tech | Reason |
+|-------|------|--------|
+| API | FastAPI (Python) | Async, typed, great DX |
+| Database | MongoDB Atlas + Motor | Flexible schema, free cloud, TTL indexes for token expiry |
+| Password hashing | Argon2id (argon2-cffi) | OWASP recommended |
+| JWT | python-jose | Standard FastAPI pattern |
+| Email sending | Resend | Reliable, generous free tier |
+| Email hosting | Vercel + Mangum | Separate from Render, Python-native |
+| Frontend | Vite + React 18 + TypeScript | Fast HMR, strong typing |
+| Charts | Recharts (admin only) | Composable, React-native |
+| Timezone | pytz + date-fns-tz | Full IANA timezone support |
+| Backend hosting | Render | Free tier, Python support |
+| Frontend hosting | Vercel | Fast deploys, CDN, free tier |
+
+
+## ==== DEMO CREDENTIALS =====
+Use the admin details below to login to admin portal.
+Use the agent details below to login to field agent portal.
+
+> Admin 
+    Name: Alice Keya  
+    Email: alicekeya@smartseason.app 
+    Password:Test1234!
+
+> Agents
+    Name: Bob Kamau
+    Email: bob@smartseason.app
+    Password: Test1234!
+
+    Name: Carol Smith
+    Email: carolsmith@smartseason.app
+    Password: Test1234!

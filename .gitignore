@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+*.pyc
+
+# Node
+node_modules/
+npm-debug.log*
+.npm
+
+# Build
+dist/
+dist-ssr/
+.next/
+out/
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Editors
+.vscode/
+.idea/
+*.DS_Store
+*.suo
+*.sw?
+
+# TypeScript
+*.tsbuildinfo
+
+# Logs
+*.log
+logs/

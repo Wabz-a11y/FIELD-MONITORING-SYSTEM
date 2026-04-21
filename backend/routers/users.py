@@ -1,32 +1,14 @@
 from fastapi import APIRouter, Depends
-from database import users_collection
-from models import UserOut
+from database import users_col
 from auth_utils import require_admin
+from helpers import user_to_out
 
 router = APIRouter()
 
-
-@router.get("/agents", response_model=list[UserOut])
+@router.get("/agents")
 async def list_agents(admin=Depends(require_admin)):
-    agents = []
-    async for user in users_collection.find({"role": "agent"}):
-        agents.append(UserOut(
-            id=str(user["_id"]),
-            name=user["name"],
-            email=user["email"],
-            role=user["role"],
-        ))
-    return agents
+    return [user_to_out(u) async for u in users_col.find({"role": "agent"})]
 
-
-@router.get("/", response_model=list[UserOut])
-async def list_all_users(admin=Depends(require_admin)):
-    users = []
-    async for user in users_collection.find():
-        users.append(UserOut(
-            id=str(user["_id"]),
-            name=user["name"],
-            email=user["email"],
-            role=user["role"],
-        ))
-    return users
+@router.get("/")
+async def list_all(admin=Depends(require_admin)):
+    return [user_to_out(u) async for u in users_col.find()]

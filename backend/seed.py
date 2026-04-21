@@ -8,7 +8,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from passlib.context import CryptContext
 from bson import ObjectId
 
-MONGO_URL = "mongodb://localhost:27017"
+MONGO_URL = "mongodb+srv://reinoservices:HazinaTech_20@cluster0.2cj1l0d.mongodb.net/?appName=Cluster0"
 DB_NAME   = "smartseason"
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")

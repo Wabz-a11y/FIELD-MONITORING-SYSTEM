@@ -1,175 +1,109 @@
 from fastapi import APIRouter, Depends, HTTPException
-from database import fields_collection, updates_collection, users_collection
-from models import (
-    FieldCreate, FieldUpdate, FieldOut, FieldStage, DashboardStats,
-    StatusBreakdown, StageBreakdown, UpdateOut
-)
-from auth_utils import get_current_user, require_admin
-from status_logic import compute_field_status, days_since
 from bson import ObjectId
-from datetime import datetime, timezone
+import pytz
+
+from database import fields_col, updates_col, users_col, notifications_col
+from models import FieldCreate, FieldUpdateSchema, FieldOut, FieldStage, DashboardStats, UpdateOut
+from auth_utils import get_current_user, require_admin
+from status_logic import compute_status, days_since
+from helpers import nairobi_now, push_notification
 
 router = APIRouter()
 
 
-async def enrich_field(f: dict) -> FieldOut:
-    # Get latest update for this field
-    last_upd = await updates_collection.find_one(
-        {"field_id": str(f["_id"])},
-        sort=[("created_at", -1)]
-    )
-    last_update_dt = last_upd["created_at"] if last_upd else None
-    health_score = last_upd.get("health_score") if last_upd else None
-
+async def enrich(f: dict) -> FieldOut:
+    last = await updates_col.find_one({"field_id": str(f["_id"])}, sort=[("created_at", -1)])
+    health = last.get("health_score") if last else None
+    last_dt = last["created_at"] if last else None
     stage = FieldStage(f["stage"])
-    planting_date = f["planting_date"]
-    status = compute_field_status(stage, planting_date, last_update_dt, health_score)
-
     agent_name = None
     if f.get("assigned_agent_id"):
         try:
-            agent = await users_collection.find_one({"_id": ObjectId(f["assigned_agent_id"])})
-            if agent:
-                agent_name = agent["name"]
-        except Exception:
-            pass
-
+            ag = await users_col.find_one({"_id": ObjectId(f["assigned_agent_id"])})
+            if ag: agent_name = ag["name"]
+        except Exception: pass
     return FieldOut(
-        id=str(f["_id"]),
-        name=f["name"],
-        crop_type=f["crop_type"],
-        planting_date=f["planting_date"],
-        stage=stage,
-        status=status,
-        location=f.get("location"),
-        size_hectares=f.get("size_hectares"),
-        assigned_agent_id=f.get("assigned_agent_id"),
+        id=str(f["_id"]), name=f["name"], crop_type=f["crop_type"],
+        planting_date=f["planting_date"], stage=stage,
+        status=compute_status(stage, f["planting_date"], last_dt, health),
+        location=f.get("location"), size_hectares=f.get("size_hectares"),
+        notes=f.get("notes"), assigned_agent_id=f.get("assigned_agent_id"),
         assigned_agent_name=agent_name,
-        created_at=f["created_at"],
-        updated_at=f["updated_at"],
-        days_since_planted=days_since(f["planting_date"]),
-        last_update=last_update_dt,
+        created_at=f["created_at"], updated_at=f["updated_at"],
+        days_since_planted=days_since(f["planting_date"]), last_update=last_dt,
     )
 
-
-# ── CRUD ──────────────────────────────────────────────────────────────────────
 
 @router.post("/", response_model=FieldOut)
 async def create_field(data: FieldCreate, admin=Depends(require_admin)):
-    now = datetime.now(timezone.utc)
-    doc = {
-        **data.model_dump(),
-        "stage": FieldStage.planted.value,
-        "created_at": now,
-        "updated_at": now,
-    }
-    if doc.get("planting_date") and doc["planting_date"].tzinfo is None:
-        doc["planting_date"] = doc["planting_date"].replace(tzinfo=timezone.utc)
-    result = await fields_collection.insert_one(doc)
-    doc["_id"] = result.inserted_id
-    return await enrich_field(doc)
-
-
-@router.get("/", response_model=list[FieldOut])
-async def list_fields(current_user=Depends(get_current_user)):
-    query = {}
-    if current_user["role"] == "agent":
-        query["assigned_agent_id"] = str(current_user["_id"])
-
-    result = []
-    async for f in fields_collection.find(query).sort("created_at", -1):
-        result.append(await enrich_field(f))
-    return result
+    now = nairobi_now()
+    pd = data.planting_date
+    if pd.tzinfo is None:
+        pd = pytz.utc.localize(pd)
+    doc = {**data.model_dump(), "planting_date": pd, "stage": "planted", "created_at": now, "updated_at": now}
+    result = await fields_col.insert_one(doc); doc["_id"] = result.inserted_id
+    if data.assigned_agent_id:
+        await push_notification(notifications_col, data.assigned_agent_id,
+            f"New field assigned: {data.name}", f"You have been assigned {data.name} ({data.crop_type}).", "info")
+    return await enrich(doc)
 
 
 @router.get("/dashboard", response_model=DashboardStats)
-async def dashboard(current_user=Depends(get_current_user)):
-    query = {}
-    if current_user["role"] == "agent":
-        query["assigned_agent_id"] = str(current_user["_id"])
-
-    all_fields = []
-    async for f in fields_collection.find(query):
-        all_fields.append(await enrich_field(f))
-
-    status_counts = {"active": 0, "at_risk": 0, "completed": 0}
-    stage_counts = {"planted": 0, "growing": 0, "ready": 0, "harvested": 0}
-    at_risk_fields = []
-
+async def dashboard(user=Depends(get_current_user)):
+    q = {} if user["role"] == "admin" else {"assigned_agent_id": str(user["_id"])}
+    all_fields = [await enrich(f) async for f in fields_col.find(q)]
+    sc = {"active": 0, "at_risk": 0, "completed": 0}
+    tc = {"planted": 0, "growing": 0, "ready": 0, "harvested": 0}
+    at_risk = []
     for f in all_fields:
-        status_counts[f.status.value] += 1
-        stage_counts[f.stage.value] += 1
-        if f.status.value == "at_risk":
-            at_risk_fields.append(f)
-
-    # Recent updates
-    update_query = {}
-    if current_user["role"] == "agent":
-        update_query["agent_id"] = str(current_user["_id"])
-
-    recent_updates = []
-    async for u in updates_collection.find(update_query).sort("created_at", -1).limit(10):
-        agent = await users_collection.find_one({"_id": ObjectId(u["agent_id"])}) if u.get("agent_id") else None
-        field = await fields_collection.find_one({"_id": ObjectId(u["field_id"])}) if u.get("field_id") else None
-        recent_updates.append(UpdateOut(
-            id=str(u["_id"]),
-            field_id=u["field_id"],
-            field_name=field["name"] if field else None,
-            agent_id=u["agent_id"],
-            agent_name=agent["name"] if agent else None,
-            stage=u.get("stage"),
-            notes=u["notes"],
-            health_score=u.get("health_score"),
-            created_at=u["created_at"],
-        ))
-
+        sc[f.status.value] += 1; tc[f.stage.value] += 1
+        if f.status.value == "at_risk": at_risk.append(f)
+    uq = {} if user["role"] == "admin" else {"agent_id": str(user["_id"])}
+    recent = []
+    async for u in updates_col.find(uq).sort("created_at", -1).limit(10):
+        ag = await users_col.find_one({"_id": ObjectId(u["agent_id"])}) if u.get("agent_id") else None
+        fi = await fields_col.find_one({"_id": ObjectId(u["field_id"])}) if u.get("field_id") else None
+        recent.append(UpdateOut(id=str(u["_id"]), field_id=u["field_id"], field_name=fi["name"] if fi else None,
+            agent_id=u["agent_id"], agent_name=ag["name"] if ag else None,
+            stage=u.get("stage"), notes=u["notes"], health_score=u.get("health_score"), created_at=u["created_at"]))
     return DashboardStats(
         total_fields=len(all_fields),
-        status_breakdown=StatusBreakdown(**status_counts),
-        stage_breakdown=StageBreakdown(**stage_counts),
-        recent_updates=recent_updates,
-        at_risk_fields=at_risk_fields[:5],
+        total_agents=await users_col.count_documents({"role": "agent"}) if user["role"] == "admin" else None,
+        status_breakdown=sc, stage_breakdown=tc, recent_updates=recent, at_risk_fields=at_risk[:5],
     )
 
 
+@router.get("/", response_model=list[FieldOut])
+async def list_fields(user=Depends(get_current_user)):
+    q = {} if user["role"] == "admin" else {"assigned_agent_id": str(user["_id"])}
+    return [await enrich(f) async for f in fields_col.find(q).sort("created_at", -1)]
+
+
 @router.get("/{field_id}", response_model=FieldOut)
-async def get_field(field_id: str, current_user=Depends(get_current_user)):
-    try:
-        f = await fields_collection.find_one({"_id": ObjectId(field_id)})
-    except Exception:
-        raise HTTPException(status_code=404, detail="Field not found")
-    if not f:
-        raise HTTPException(status_code=404, detail="Field not found")
-    if current_user["role"] == "agent" and f.get("assigned_agent_id") != str(current_user["_id"]):
-        raise HTTPException(status_code=403, detail="Access denied")
-    return await enrich_field(f)
+async def get_field(field_id: str, user=Depends(get_current_user)):
+    try: f = await fields_col.find_one({"_id": ObjectId(field_id)})
+    except Exception: raise HTTPException(404, "Field not found")
+    if not f: raise HTTPException(404, "Field not found")
+    if user["role"] == "agent" and f.get("assigned_agent_id") != str(user["_id"]):
+        raise HTTPException(403, "Access denied")
+    return await enrich(f)
 
 
 @router.patch("/{field_id}", response_model=FieldOut)
-async def update_field(field_id: str, data: FieldUpdate, admin=Depends(require_admin)):
-    try:
-        f = await fields_collection.find_one({"_id": ObjectId(field_id)})
-    except Exception:
-        raise HTTPException(status_code=404, detail="Field not found")
-    if not f:
-        raise HTTPException(status_code=404, detail="Field not found")
-
-    updates = {k: v for k, v in data.model_dump().items() if v is not None}
-    updates["updated_at"] = datetime.now(timezone.utc)
-    if "stage" in updates:
-        updates["stage"] = updates["stage"].value
-
-    await fields_collection.update_one({"_id": ObjectId(field_id)}, {"$set": updates})
-    f = await fields_collection.find_one({"_id": ObjectId(field_id)})
-    return await enrich_field(f)
+async def update_field(field_id: str, data: FieldUpdateSchema, admin=Depends(require_admin)):
+    try: f = await fields_col.find_one({"_id": ObjectId(field_id)})
+    except Exception: raise HTTPException(404, "Field not found")
+    if not f: raise HTTPException(404, "Field not found")
+    upd = {k: v for k, v in data.model_dump().items() if v is not None}
+    if "stage" in upd: upd["stage"] = upd["stage"].value
+    upd["updated_at"] = nairobi_now()
+    await fields_col.update_one({"_id": ObjectId(field_id)}, {"$set": upd})
+    return await enrich(await fields_col.find_one({"_id": ObjectId(field_id)}))
 
 
 @router.delete("/{field_id}")
 async def delete_field(field_id: str, admin=Depends(require_admin)):
-    try:
-        result = await fields_collection.delete_one({"_id": ObjectId(field_id)})
-    except Exception:
-        raise HTTPException(status_code=404, detail="Field not found")
-    if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="Field not found")
-    return {"message": "Field deleted"}
+    try: r = await fields_col.delete_one({"_id": ObjectId(field_id)})
+    except Exception: raise HTTPException(404, "Field not found")
+    if r.deleted_count == 0: raise HTTPException(404, "Field not found")
+    return {"message": "Deleted"}
